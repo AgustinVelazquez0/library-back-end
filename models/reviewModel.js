@@ -26,9 +26,18 @@ const reviewSchema = new mongoose.Schema(
       type: String,
       default: "Anónimo", // Valor por defecto para reseñas anónimas
     },
+    // Campo adicional para permitir múltiples reseñas del mismo usuario
+    timestamp: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );
+
+// Si existe un índice compuesto que podría estar causando problemas, lo eliminamos explícitamente
+// Nota: Solo es necesario ejecutar esto una vez en producción
+reviewSchema.index({ book: 1, user: 1 }, { unique: false });
 
 const Review = mongoose.model("Review", reviewSchema);
 
