@@ -123,7 +123,7 @@ const createReview = async (req, res) => {
             rating: Number(rating),
             comment,
             timestamp: new Date(),
-            ...userData,
+            user: req.user.id,
           });
 
           await newReview.save();
