@@ -6,13 +6,11 @@ const Book = require("../models/bookModel"); // Asumiendo que tienes un modelo d
 exports.createReview = async (req, res) => {
   try {
     let { bookId, rating, comment } = req.body;
-    const userId = req.user.id; // Obtenido del middleware verifyToken
-    const username = req.user.username; // Asumiendo que guardas el username en el token
+    const userId = req.user.id;
+    const username = req.user.username;
 
     // Forzar bookId a string
     bookId = String(bookId);
-
-    console.log({ bookId, rating, comment, userId, username });
 
     // Validar que bookId sea un ObjectId válido
     if (!mongoose.Types.ObjectId.isValid(bookId)) {
@@ -20,10 +18,9 @@ exports.createReview = async (req, res) => {
     }
 
     // Convertir bookId y userId a ObjectId
-    const objectBookId = mongoose.Types.ObjectId(bookId);
-    const objectUserId = mongoose.Types.ObjectId(userId);
+    const objectBookId = new mongoose.Types.ObjectId(bookId); // Usar 'new' si es necesario
+    const objectUserId = new mongoose.Types.ObjectId(userId); // Usar 'new' si es necesario
 
-    // Buscar el libro por su ObjectId
     const book = await Book.findById(objectBookId);
 
     if (!book) {
