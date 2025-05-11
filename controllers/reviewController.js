@@ -8,8 +8,8 @@ exports.createReview = async (req, res) => {
     const userId = req.user.id; // Obtenido del middleware verifyToken
     const username = req.user.username; // Asumiendo que guardas el username en el token
 
-    // Buscar el libro por su id numérico
-    const book = await Book.findOne({ id: bookId });
+    // Buscar el libro por su ObjectId
+    const book = await Book.findById(bookId); // Cambié esta línea
 
     // Verificar si el libro existe
     if (!book) {
