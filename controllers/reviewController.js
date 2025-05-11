@@ -21,7 +21,7 @@ exports.createReview = async (req, res) => {
     const objectBookId = new mongoose.Types.ObjectId(bookId); // Usar 'new' si es necesario
     const objectUserId = new mongoose.Types.ObjectId(userId); // Usar 'new' si es necesario
 
-    const book = await Book.findById(objectBookId);
+    const book = await Book.findOne({ id: parseInt(bookId) });
 
     if (!book) {
       return res.status(404).json({ message: "Libro no encontrado" });

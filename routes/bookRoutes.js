@@ -12,4 +12,12 @@ router.get("/:id", verifyToken, bookController.getBookById); // Obtener un libro
 router.put("/:id", verifyToken, bookController.updateBook); // Actualizar un libro
 router.delete("/:id", verifyToken, bookController.deleteBook); // Eliminar un libro
 
+// Nueva ruta para cargar libros desde JSON
+// Con autenticación
+
+// router.post("/load", verifyToken, bookController.loadBooksFromJson);
+
+// O sin autenticación (solo comentar la línea de arriba y descomentar esta)
+router.post("/load", bookController.loadBooksFromJson);
+
 module.exports = router;

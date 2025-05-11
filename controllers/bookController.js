@@ -59,3 +59,53 @@ exports.deleteBook = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Añade este nuevo método al controlador existente
+exports.loadBooksFromJson = async (req, res) => {
+  try {
+    const booksData = req.body;
+
+    if (!Array.isArray(booksData)) {
+      return res
+        .status(400)
+        .json({ message: "Se esperaba un array de libros" });
+    }
+
+    // Prepara los libros para inserción
+    const booksToInsert = booksData.map((book) => {
+      const bookToSave = { ...book };
+
+      // Si el libro ya tiene un _id de MongoDB válido, lo mantenemos
+      // De lo contrario, MongoDB generará uno nuevo
+
+      // Asegúrate de mantener el id numérico como numericId
+      if (typeof bookToSave.id === "number") {
+        bookToSave.numericId = bookToSave.id;
+      }
+
+      return bookToSave;
+    });
+
+    // Usa insertMany con la opción ordered:false para continuar
+    // incluso si hay algunos duplicados
+    const result = await Book.insertMany(booksToInsert, { ordered: false });
+
+    res.status(201).json({
+      message: `${result.length} libros cargados exitosamente`,
+      books: result,
+    });
+  } catch (error) {
+    // Manejo especial para errores de duplicación
+    if (error.code === 11000) {
+      return res.status(409).json({
+        message: "Algunos libros ya existen en la base de datos",
+        error: error.message,
+      });
+    }
+
+    res.status(500).json({
+      message: "Error al cargar los libros",
+      error: error.message,
+    });
+  }
+};
