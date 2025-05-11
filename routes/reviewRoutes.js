@@ -1,25 +1,12 @@
+// routes/reviewRoutes.js
 const express = require("express");
 const router = express.Router();
 const reviewController = require("../controllers/reviewController");
-const verifyToken = require("../middleware/verifyToken");
+const verifyToken = require("../middleware/verifyToken"); // Si usas autenticación
 
 // Rutas para reseñas
-// La autenticación es opcional para crear reseñas (será anónima si no hay token)
-router.post(
-  "/",
-  (req, res, next) => {
-    // Middleware opcional: si hay token, verifica y adjunta usuario, si no, continúa
-    if (req.headers.authorization) {
-      verifyToken(req, res, next);
-    } else {
-      next();
-    }
-  },
-  reviewController.createReview
-);
-
-// Ver reseñas de un libro (público)
-router.get("/:bookId", reviewController.getReviewsByBook);
+router.post("/", reviewController.createReview); // Crea una reseña
+router.get("/book/:bookId", reviewController.getReviewsByBook); // Obtiene reseñas por libro
 
 // Las siguientes rutas requieren autenticación
 router.get("/user", verifyToken, (req, res) => {

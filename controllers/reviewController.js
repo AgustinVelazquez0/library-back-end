@@ -9,6 +9,7 @@ const isValidObjectId = (id) => {
 
 // Función para crear una nueva reseña
 const createReview = async (req, res) => {
+  // Cambia bookId por book para mantener consistencia
   const { bookId, rating, comment } = req.body;
 
   try {
@@ -55,9 +56,24 @@ const createReview = async (req, res) => {
       };
     }
 
-    // Creamos la reseña
+    // Verificar si ya existe una reseña anónima para este libro
+    // Esto debería prevenir el error de clave duplicada
+    if (!userData.user) {
+      const existingAnonymousReview = await Review.findOne({
+        book: book._id,
+        user: { $exists: false },
+      });
+
+      if (existingAnonymousReview) {
+        return res.status(409).json({
+          message: "Ya existe una reseña anónima para este libro",
+        });
+      }
+    }
+
+    // Creamos la reseña con los campos correctos
     const newReview = new Review({
-      book: book._id, // Usamos el ObjectId real del libro
+      book: book._id, // campo book, no bookId
       rating,
       comment,
       ...userData,
@@ -71,6 +87,15 @@ const createReview = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al crear reseña:", error);
+
+    // Manejo especial para errores de duplicación
+    if (error.code === 11000) {
+      return res.status(409).json({
+        message: "Ya has dejado una reseña para este libro",
+        details: error.message,
+      });
+    }
+
     return res.status(500).json({
       message: "Error del servidor",
       error: error.message,
