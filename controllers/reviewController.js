@@ -10,7 +10,7 @@ exports.createReview = async (req, res) => {
     const username = req.user.username; // Asumiendo que guardas el username en el token
 
     // Buscar el libro por su ObjectId
-    const book = await Book.findById(mongoose.Types.ObjectId(bookId));
+    const book = await Book.findById(new mongoose.Types.ObjectId(bookId));
 
     // Verificar si el libro existe
     if (!book) {
