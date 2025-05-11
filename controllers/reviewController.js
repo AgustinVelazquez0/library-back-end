@@ -84,8 +84,8 @@ const createReview = async (req, res) => {
       book: bookDoc._id,
       rating: Number(rating),
       comment,
-      timestamp: new Date(), // Añadimos timestamp único para evitar duplicados
-      ...userData,
+      timestamp: new Date(),
+      user: req.user.id, //
     });
 
     await newReview.save();
