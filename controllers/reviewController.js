@@ -5,9 +5,13 @@ const Book = require("../models/bookModel"); // Asumiendo que tienes un modelo d
 // Crear una nueva reseña
 exports.createReview = async (req, res) => {
   try {
-    const { bookId, rating, comment } = req.body;
+    let { bookId, rating, comment } = req.body;
     const userId = req.user.id; // Obtenido del middleware verifyToken
     const username = req.user.username; // Asumiendo que guardas el username en el token
+
+    // Forzar bookId a string
+    bookId = String(bookId);
+
     console.log({ bookId, rating, comment, userId, username });
 
     // Validar que bookId sea un ObjectId válido
@@ -16,13 +20,12 @@ exports.createReview = async (req, res) => {
     }
 
     // Convertir bookId y userId a ObjectId
-    const objectBookId = mongoose.Types.ObjectId(bookId); // Convertir bookId a ObjectId
-    const objectUserId = mongoose.Types.ObjectId(userId); // Convertir userId a ObjectId
+    const objectBookId = mongoose.Types.ObjectId(bookId);
+    const objectUserId = mongoose.Types.ObjectId(userId);
 
     // Buscar el libro por su ObjectId
     const book = await Book.findById(objectBookId);
 
-    // Verificar si el libro existe
     if (!book) {
       return res.status(404).json({ message: "Libro no encontrado" });
     }
@@ -32,6 +35,7 @@ exports.createReview = async (req, res) => {
       bookId: objectBookId,
       userId: objectUserId,
     });
+
     if (existingReview) {
       return res
         .status(400)
@@ -66,17 +70,15 @@ exports.getReviewsByBook = async (req, res) => {
   try {
     const { bookId } = req.params;
 
-    // Validar que bookId sea un ObjectId válido
     if (!mongoose.Types.ObjectId.isValid(bookId)) {
       return res.status(400).json({ message: "ID de libro no válido" });
     }
 
-    // Convertir bookId a ObjectId
-    const objectBookId = mongoose.Types.ObjectId(bookId); // Convertir bookId a ObjectId
+    const objectBookId = mongoose.Types.ObjectId(bookId);
 
     const reviews = await Review.find({ bookId: objectBookId }).sort({
       createdAt: -1,
-    }); // Ordenar por más reciente primero
+    });
 
     res.status(200).json(reviews);
   } catch (error) {
@@ -94,7 +96,6 @@ exports.updateReview = async (req, res) => {
     const { rating, comment } = req.body;
     const userId = req.user.id;
 
-    // Verificar que la reseña exista y pertenezca al usuario
     const review = await Review.findById(id);
     if (!review) {
       return res.status(404).json({ message: "Reseña no encontrada" });
@@ -106,7 +107,6 @@ exports.updateReview = async (req, res) => {
         .json({ message: "No tienes permiso para editar esta reseña" });
     }
 
-    // Actualizar la reseña
     review.rating = rating || review.rating;
     review.comment = comment || review.comment;
 
@@ -130,7 +130,6 @@ exports.deleteReview = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    // Verificar que la reseña exista y pertenezca al usuario
     const review = await Review.findById(id);
     if (!review) {
       return res.status(404).json({ message: "Reseña no encontrada" });
