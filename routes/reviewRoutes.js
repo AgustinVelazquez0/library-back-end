@@ -5,7 +5,7 @@ const verifyToken = require("../middleware/verifyToken");
 
 // Rutas para reseñas existentes
 router.post("/", reviewController.createReview);
-router.get("/book/:bookId", reviewController.getReviewsByBook);
+router.get("/:bookId", reviewController.getReviewsByBook);
 router.get("/", reviewController.getAllReviews);
 
 // Las siguientes rutas están comentadas porque aún no están implementadas
