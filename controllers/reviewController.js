@@ -8,9 +8,11 @@ exports.createReview = async (req, res) => {
     const userId = req.user.id; // Obtenido del middleware verifyToken
     const username = req.user.username; // Asumiendo que guardas el username en el token
 
+    // Buscar el libro por su _id de mongo
+    const book = await Book.findById(bookId);
+
     // Verificar si el libro existe
-    const bookExists = await Book.findById(bookId);
-    if (!bookExists) {
+    if (!book) {
       return res.status(404).json({ message: "Libro no encontrado" });
     }
 
