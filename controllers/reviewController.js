@@ -56,21 +56,6 @@ const createReview = async (req, res) => {
       };
     }
 
-    // Verificar si ya existe una reseña anónima para este libro
-    // Esto debería prevenir el error de clave duplicada
-    if (!userData.user) {
-      const existingAnonymousReview = await Review.findOne({
-        book: book._id,
-        user: { $exists: false },
-      });
-
-      if (existingAnonymousReview) {
-        return res.status(409).json({
-          message: "Ya existe una reseña anónima para este libro",
-        });
-      }
-    }
-
     // Creamos la reseña con los campos correctos
     const newReview = new Review({
       book: book._id, // campo book, no bookId
