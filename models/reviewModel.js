@@ -3,12 +3,12 @@ const mongoose = require("mongoose");
 const reviewSchema = new mongoose.Schema(
   {
     bookId: {
-      type: mongoose.Schema.Types.ObjectId, // Cambio aquí, ahora es ObjectId
-      ref: "Book", // Referencia al modelo "Book"
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Book",
       required: true,
     },
     userId: {
-      type: mongoose.Schema.Types.ObjectId, // Esto está bien, hace referencia al modelo "User"
+      type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
