@@ -8,9 +8,10 @@ exports.createReview = async (req, res) => {
     const { bookId, rating, comment } = req.body;
     const userId = req.user.id; // Obtenido del middleware verifyToken
     const username = req.user.username; // Asumiendo que guardas el username en el token
+    console.log({ bookId, rating, comment, userId, username });
 
     // Buscar el libro por su ObjectId
-    const book = await Book.findById(new mongoose.Types.ObjectId(bookId));
+    const book = await Book.findById(bookId); // No es necesario usar Types.ObjectId
 
     // Verificar si el libro existe
     if (!book) {
