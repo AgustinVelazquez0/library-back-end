@@ -1,15 +1,48 @@
 const Review = require("../models/reviewModel");
 const Book = require("../models/bookModel");
+const mongoose = require("mongoose");
+
+// Función auxiliar para verificar si un string es un ObjectId válido
+const isValidObjectId = (id) => {
+  return mongoose.Types.ObjectId.isValid(id);
+};
 
 // Función para crear una nueva reseña
 const createReview = async (req, res) => {
   const { bookId, rating, comment } = req.body;
 
   try {
+    console.log("Intento de crear reseña para libro con ID:", bookId);
+
     // Verificamos que el libro exista
-    const book = await Book.findById(bookId);
+    let book;
+
+    // Si es un ObjectId válido, buscamos por _id
+    if (isValidObjectId(bookId)) {
+      book = await Book.findById(bookId);
+    } else {
+      // Si no es un ObjectId válido, intentamos buscar por simpleId
+      book = await Book.findOne({ simpleId: String(bookId) });
+
+      // Si aún no encontramos el libro, lo creamos con el simpleId
+      if (!book) {
+        console.log(
+          "Libro no encontrado. Creando nuevo libro con simpleId:",
+          bookId
+        );
+        book = new Book({
+          title: `Libro ${bookId}`,
+          author: "Autor Desconocido",
+          description: "Descripción pendiente",
+          category: "Sin categoría",
+          simpleId: String(bookId),
+        });
+        await book.save();
+        console.log("Libro creado:", book);
+      }
+    }
+
     if (!book) {
-      console.log("Libro no encontrado con ID:", bookId);
       return res.status(404).json({ message: "Libro no encontrado" });
     }
 
@@ -24,7 +57,7 @@ const createReview = async (req, res) => {
 
     // Creamos la reseña
     const newReview = new Review({
-      book: bookId, // Asegúrate de usar "book" aquí para coincidir con el modelo
+      book: book._id, // Usamos el ObjectId real del libro
       rating,
       comment,
       ...userData,
@@ -50,14 +83,29 @@ const getReviewsByBook = async (req, res) => {
   const { bookId } = req.params;
 
   try {
-    console.log("Buscando reseñas para el libro:", bookId);
+    console.log("Buscando reseñas para el libro con ID:", bookId);
+
+    let book;
+    // Si es un ObjectId válido, buscamos por _id
+    if (isValidObjectId(bookId)) {
+      book = await Book.findById(bookId);
+    } else {
+      // Si no es un ObjectId válido, buscamos por simpleId
+      book = await Book.findOne({ simpleId: String(bookId) });
+    }
+
+    if (!book) {
+      return res.status(404).json({ message: "Libro no encontrado" });
+    }
 
     // Buscamos las reseñas del libro
-    const reviews = await Review.find({ book: bookId })
+    const reviews = await Review.find({ book: book._id })
       .sort({ createdAt: -1 }) // Ordenar por más recientes primero
       .populate("user", "username"); // Opcional: poblar datos del usuario
 
-    console.log("Reseñas encontradas:", reviews.length);
+    console.log(
+      `Encontradas ${reviews.length} reseñas para el libro ${book.title}`
+    );
 
     return res.status(200).json({ reviews });
   } catch (error) {
