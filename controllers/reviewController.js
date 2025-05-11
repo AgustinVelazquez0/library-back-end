@@ -15,8 +15,12 @@ exports.createReview = async (req, res) => {
       return res.status(400).json({ message: "ID de libro no válido" });
     }
 
+    // Convertir bookId y userId a ObjectId
+    const objectBookId = mongoose.Types.ObjectId(bookId); // Convertir bookId a ObjectId
+    const objectUserId = mongoose.Types.ObjectId(userId); // Convertir userId a ObjectId
+
     // Buscar el libro por su ObjectId
-    const book = await Book.findById(bookId);
+    const book = await Book.findById(objectBookId);
 
     // Verificar si el libro existe
     if (!book) {
@@ -24,7 +28,10 @@ exports.createReview = async (req, res) => {
     }
 
     // Verificar si el usuario ya hizo una reseña para este libro
-    const existingReview = await Review.findOne({ bookId, userId });
+    const existingReview = await Review.findOne({
+      bookId: objectBookId,
+      userId: objectUserId,
+    });
     if (existingReview) {
       return res
         .status(400)
@@ -33,8 +40,8 @@ exports.createReview = async (req, res) => {
 
     // Crear la reseña
     const newReview = new Review({
-      bookId,
-      userId,
+      bookId: objectBookId,
+      userId: objectUserId,
       rating,
       comment,
       username,
@@ -59,7 +66,17 @@ exports.getReviewsByBook = async (req, res) => {
   try {
     const { bookId } = req.params;
 
-    const reviews = await Review.find({ bookId }).sort({ createdAt: -1 }); // Ordenar por más reciente primero
+    // Validar que bookId sea un ObjectId válido
+    if (!mongoose.Types.ObjectId.isValid(bookId)) {
+      return res.status(400).json({ message: "ID de libro no válido" });
+    }
+
+    // Convertir bookId a ObjectId
+    const objectBookId = mongoose.Types.ObjectId(bookId); // Convertir bookId a ObjectId
+
+    const reviews = await Review.find({ bookId: objectBookId }).sort({
+      createdAt: -1,
+    }); // Ordenar por más reciente primero
 
     res.status(200).json(reviews);
   } catch (error) {
