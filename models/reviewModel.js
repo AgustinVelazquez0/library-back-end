@@ -2,15 +2,15 @@ const mongoose = require("mongoose");
 
 const reviewSchema = new mongoose.Schema(
   {
-    bookId: {
+    book: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Book",
       required: true,
     },
-    userId: {
+    user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false, // Cambiado a false para permitir reseñas anónimas inicialmente
     },
     rating: {
       type: Number,
@@ -24,14 +24,15 @@ const reviewSchema = new mongoose.Schema(
     },
     username: {
       type: String,
-      required: true,
+      default: "Anónimo", // Valor por defecto para reseñas anónimas
     },
   },
   { timestamps: true }
 );
 
 // Índice compuesto para evitar reseñas duplicadas del mismo usuario para el mismo libro
-reviewSchema.index({ bookId: 1, userId: 1 }, { unique: true });
+// Solo si el usuario está autenticado
+reviewSchema.index({ book: 1, user: 1 }, { unique: true, sparse: true });
 
 const Review = mongoose.model("Review", reviewSchema);
 
