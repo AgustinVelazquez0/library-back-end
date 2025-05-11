@@ -5,6 +5,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const bookRoutes = require("./routes/bookRoutes");
 const userRoutes = require("./routes/userRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -23,6 +24,7 @@ app.use((req, res, next) => {
 app.use(express.json()); // Para que se pueda leer req.body
 app.use("/api/books", bookRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 // Conexión a MongoDB
 mongoose
