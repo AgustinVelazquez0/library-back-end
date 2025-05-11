@@ -30,6 +30,10 @@ const reviewSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Índice compuesto para evitar reseñas duplicadas del mismo usuario para el mismo libro
+// Solo si el usuario está autenticado
+reviewSchema.index({ book: 1, user: 1 }, { unique: true, sparse: true });
+
 const Review = mongoose.model("Review", reviewSchema);
 
 module.exports = Review;
