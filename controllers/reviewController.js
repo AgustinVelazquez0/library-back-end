@@ -10,8 +10,13 @@ exports.createReview = async (req, res) => {
     const username = req.user.username; // Asumiendo que guardas el username en el token
     console.log({ bookId, rating, comment, userId, username });
 
+    // Validar que bookId sea un ObjectId válido
+    if (!mongoose.Types.ObjectId.isValid(bookId)) {
+      return res.status(400).json({ message: "ID de libro no válido" });
+    }
+
     // Buscar el libro por su ObjectId
-    const book = await Book.findById(bookId); // No es necesario usar Types.ObjectId
+    const book = await Book.findById(bookId);
 
     // Verificar si el libro existe
     if (!book) {
