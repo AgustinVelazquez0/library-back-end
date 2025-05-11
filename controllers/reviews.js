@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 // const { ObjectId } = require("mongodb"); // Ya no necesitamos esto aquí
 
-const Review = require("../models/Review");
-const Book = require("../models/Book");
+const Review = require("./reviewModel");
+const Book = require("./models/bookModel");
 
 // Importar el controlador de reseñas
 const reviewController = require("../controllers/reviewController");
