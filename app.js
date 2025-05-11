@@ -5,7 +5,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const bookRoutes = require("./routes/bookRoutes");
 const userRoutes = require("./routes/userRoutes");
-const reviewRoutes = require("./routes/reviewRoutes");
+const reviewRoutes = require("./routes/reviews");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
