@@ -1,7 +1,7 @@
 // controllers/reviewController.js
 const mongoose = require("mongoose");
-const Book = require("../models/Book");
-const Review = require("../models/Review"); // Asegúrate de tener este modelo
+const Review = require("../models/reviewModel");
+const Book = require("../models/bookModel");
 
 exports.createReview = async (req, res) => {
   try {
@@ -69,6 +69,7 @@ exports.createReview = async (req, res) => {
       book: book._id, // Usamos el ObjectId de MongoDB
       rating: parseInt(rating),
       comment,
+      userId: userId || "anonymous",
     });
 
     const savedReview = await newReview.save();

@@ -5,7 +5,7 @@ const bookSchema = new mongoose.Schema(
     // Añadido campo numericId para mantener compatibilidad con IDs numéricos de tu JSON
     numericId: {
       type: Number,
-      index: true, // Para búsquedas más eficientes
+      index: true,
     },
     title: {
       type: String,
@@ -58,4 +58,28 @@ const bookSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Book", bookSchema);
+// Método estático para encontrar un libro por cualquier tipo de ID
+bookSchema.statics.findByAnyId = async function (id) {
+  // Array de condiciones para buscar
+  const conditions = [{ _id: id }];
+
+  // Si es un número, añadimos versión string
+  if (!isNaN(id)) {
+    conditions.push({ _id: id.toString() });
+  }
+
+  // Si parece un ObjectId válido
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    try {
+      conditions.push({ _id: mongoose.Types.ObjectId(id) });
+    } catch (err) {
+      // Ignorar si no es un ObjectId válido
+    }
+  }
+
+  // Buscar con cualquiera de las condiciones
+  return this.findOne({ $or: conditions });
+};
+
+const Book = mongoose.model("Book", bookSchema);
+module.exports = Book;
