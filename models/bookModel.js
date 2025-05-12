@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const bookSchema = new mongoose.Schema(
   {
+    numericId: {
+      type: Number,
+      required: true,
+      unique: true,
+      index: true, // Añadido para mejorar búsquedas
+    },
     title: {
       type: String,
       required: true,
@@ -30,10 +36,21 @@ const bookSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    language: {
+      type: String,
+      default: "Español",
+    },
+    pages: {
+      type: Number,
+      default: 0,
+    },
+    publicationYear: {
+      type: Number,
+    },
     simpleId: {
       type: String,
       required: false,
-      index: true, // Índice para búsquedas más rápidas
+      index: true,
     },
   },
   { timestamps: true }
