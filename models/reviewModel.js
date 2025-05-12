@@ -5,15 +5,14 @@ const reviewSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.Mixed,
     ref: "User",
-    required: false,
-    default: null,
+    required: true,
   },
   bookId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Book",
     required: true,
   },
-  reviewerName: {
+  name: {
     type: String,
     required: true,
   },

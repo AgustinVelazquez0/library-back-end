@@ -35,27 +35,11 @@ exports.createReview = async (req, res) => {
 
     console.log(`Libro encontrado: ${book.title} (ID: ${book._id})`);
 
-    // Buscar el usuario para obtener su nombre
-    const user = await User.findById(userId);
-
-    // Manejar usuarios anónimos
-    let reviewerName = "Usuario Anónimo";
-    let validUserId = null;
-
-    // Solo buscar usuario si no es 'guest'
-    if (userId && userId !== "guest") {
-      const user = await User.findById(userId);
-      if (user) {
-        reviewerName = user.name;
-        validUserId = user._id;
-      }
-    }
-
     // Crear la reseña usando el _id del libro (ObjectId) que encontramos
     const newReview = new Review({
-      userId: validUserId,
+      userId,
       bookId: book._id, // Usar el ObjectId del libro
-      reviewerName,
+      reviewerName: user.name,
       rating,
       comment,
     });
