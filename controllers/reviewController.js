@@ -35,11 +35,14 @@ exports.createReview = async (req, res) => {
 
     console.log(`Libro encontrado: ${book.title} (ID: ${book._id})`);
 
+    // Buscar el usuario para obtener su nombre
+    const user = await user.findById(userId);
+
     // Crear la reseña usando el _id del libro (ObjectId) que encontramos
     const newReview = new Review({
       userId,
       bookId: book._id, // Usar el ObjectId del libro
-      reviewerName: User.name,
+      reviewerName: user.name,
       rating,
       comment,
     });
