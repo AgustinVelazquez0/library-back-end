@@ -1,7 +1,7 @@
 // controllers/reviewController.js
 const Review = require("../models/reviewModel");
+const User = require("../models/userModel");
 const Book = require("../models/bookModel");
-const mongoose = require("mongoose");
 
 // Crear una nueva reseña
 exports.createReview = async (req, res) => {
@@ -94,7 +94,7 @@ exports.getAllReviews = async (req, res) => {
 };
 
 // Obtener reseñas por ID de libro
-exports.getReviewsByBook = async (req, res) => {
+exports.getBookReviews = async (req, res) => {
   try {
     const { bookId } = req.params;
     let book;
@@ -132,4 +132,98 @@ exports.getReviewsByBook = async (req, res) => {
   }
 };
 
-// Otros métodos que puedas tener...
+exports.deleteReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const userId = req.user.id;
+
+    // Buscamos la reseña
+    const review = await Review.findById(reviewId);
+
+    if (!review) {
+      return res.status(404).json({
+        success: false,
+        message: "Reseña no encontrada",
+      });
+    }
+
+    // Verificamos que el usuario sea el autor de la reseña o un administrador
+    if (review.userId.toString() !== userId && req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permiso para eliminar esta reseña",
+      });
+    }
+
+    // Eliminamos la reseña
+    await Review.findByIdAndDelete(reviewId);
+
+    res.status(200).json({
+      success: true,
+      message: "Reseña eliminada con éxito",
+    });
+  } catch (error) {
+    console.error("Error al eliminar reseña:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al eliminar la reseña",
+      error: error.message,
+    });
+  }
+};
+
+// Opcional: Actualizar una reseña existente
+exports.updateReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const userId = req.user.id;
+    const { rating, comment } = req.body;
+
+    // Validación de datos
+    if (!rating && !comment) {
+      return res.status(400).json({
+        success: false,
+        message: "No hay datos para actualizar",
+      });
+    }
+
+    // Buscamos la reseña
+    const review = await Review.findById(reviewId);
+
+    if (!review) {
+      return res.status(404).json({
+        success: false,
+        message: "Reseña no encontrada",
+      });
+    }
+
+    // Verificamos que el usuario sea el autor de la reseña
+    if (review.userId.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permiso para actualizar esta reseña",
+      });
+    }
+
+    // Actualizamos la reseña
+    if (rating) review.rating = rating;
+    if (comment) review.comment = comment;
+    review.updatedAt = Date.now();
+
+    // Guardamos los cambios
+    const updatedReview = await review.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Reseña actualizada con éxito",
+      review: updatedReview,
+    });
+  } catch (error) {
+    console.error("Error al actualizar reseña:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al actualizar la reseña",
+      error: error.message,
+    });
+  }
+};
