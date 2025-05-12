@@ -2,22 +2,14 @@
 const express = require("express");
 const router = express.Router();
 const reviewController = require("../controllers/reviewController");
-const verifyToken = require("../middleware/verifyToken"); // Si usas autenticación
+const verifyToken = require("../middleware/verifyToken");
 
-// Rutas para reseñas
-router.post("/", reviewController.createReview); // Crea una reseña
-router.get("/book/:bookId", reviewController.getReviewsByBook); // Obtiene reseñas por libro
+// Ruta para obtener todas las reseñas de un libro - no requiere autenticación
+router.get("/book/:bookId", reviewController.getBookReviews);
 
-// Las siguientes rutas requieren autenticación
-router.get("/user", verifyToken, (req, res) => {
-  // Placeholder hasta implementar la funcionalidad
-  res.status(501).json({ message: "Funcionalidad no implementada" });
-});
-
-// Las siguientes rutas están comentadas porque aún no están implementadas
-// router.get("/", reviewController.getAllReviews);
-// router.get("/:id", reviewController.getReviewById);
-// router.put("/:id", verifyToken, reviewController.updateReview);
-// router.delete("/:id", verifyToken, reviewController.deleteReview);
+// Rutas que requieren autenticación
+router.post("/", verifyToken, reviewController.createReview); // Crear una reseña
+router.delete("/:reviewId", verifyToken, reviewController.deleteReview); // Eliminar una reseña
+router.put("/:reviewId", verifyToken, reviewController.updateReview); // Actualizar una reseña (opcional)
 
 module.exports = router;

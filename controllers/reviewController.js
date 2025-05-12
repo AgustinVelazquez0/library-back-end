@@ -1,133 +1,196 @@
+// controllers/reviewController.js
 const Review = require("../models/reviewModel");
+const User = require("../models/userModel");
 const Book = require("../models/bookModel");
-const mongoose = require("mongoose");
 
-// Función auxiliar para verificar si un string es un ObjectId válido
-const isValidObjectId = (id) => {
-  return mongoose.Types.ObjectId.isValid(id);
-};
-
-// Función para crear una nueva reseña
-const createReview = async (req, res) => {
-  // Cambia bookId por book para mantener consistencia
-  const { bookId, rating, comment } = req.body;
-
+exports.createReview = async (req, res) => {
   try {
-    console.log("Intento de crear reseña para libro con ID:", bookId);
+    // Obtenemos el ID del usuario desde el token de autenticación
+    const userId = req.user.id;
 
-    // Verificamos que el libro exista
-    let book;
+    // Obtenemos los datos de la reseña del cuerpo de la petición
+    const { bookId, rating, comment } = req.body;
 
-    // Si es un ObjectId válido, buscamos por _id
-    if (isValidObjectId(bookId)) {
-      book = await Book.findById(bookId);
-    } else {
-      // Si no es un ObjectId válido, intentamos buscar por simpleId
-      book = await Book.findOne({ simpleId: String(bookId) });
-
-      // Si aún no encontramos el libro, lo creamos con el simpleId
-      if (!book) {
-        console.log(
-          "Libro no encontrado. Creando nuevo libro con simpleId:",
-          bookId
-        );
-        book = new Book({
-          title: `Libro ${bookId}`,
-          author: "Autor Desconocido",
-          description: "Descripción pendiente",
-          category: "Sin categoría",
-          simpleId: String(bookId),
-        });
-        await book.save();
-        console.log("Libro creado:", book);
-      }
-    }
-
-    if (!book) {
-      return res.status(404).json({ message: "Libro no encontrado" });
-    }
-
-    // Información del usuario (opcional si está autenticado)
-    let userData = {};
-    if (req.user) {
-      userData = {
-        user: req.user._id,
-        username: req.user.username || req.user.email,
-      };
-    }
-
-    // Creamos la reseña con los campos correctos
-    const newReview = new Review({
-      book: book._id, // campo book, no bookId
-      rating,
-      comment,
-      ...userData,
-    });
-
-    await newReview.save();
-
-    return res.status(201).json({
-      message: "Reseña creada correctamente",
-      review: newReview,
-    });
-  } catch (error) {
-    console.error("Error al crear reseña:", error);
-
-    // Manejo especial para errores de duplicación
-    if (error.code === 11000) {
-      return res.status(409).json({
-        message: "Ya has dejado una reseña para este libro",
-        details: error.message,
+    // Validación de datos
+    if (!bookId || !rating || !comment) {
+      return res.status(400).json({
+        success: false,
+        message: "Por favor, proporciona todos los campos requeridos",
       });
     }
 
-    return res.status(500).json({
-      message: "Error del servidor",
+    // Comprobamos si el libro existe
+    const bookExists = await Book.findById(bookId);
+    if (!bookExists) {
+      return res.status(404).json({
+        success: false,
+        message: "Libro no encontrado",
+      });
+    }
+
+    // Obtenemos información del usuario
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Usuario no encontrado",
+      });
+    }
+
+    // Comprobamos si el usuario ya ha escrito una reseña para este libro
+    const existingReview = await Review.findOne({ userId, bookId });
+    if (existingReview) {
+      return res.status(400).json({
+        success: false,
+        message: "Ya has escrito una reseña para este libro",
+      });
+    }
+
+    // Creamos la nueva reseña
+    const newReview = new Review({
+      userId,
+      bookId,
+      username: user.name || user.email,
+      rating,
+      comment,
+    });
+
+    // Guardamos la reseña en la base de datos
+    const savedReview = await newReview.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Reseña creada con éxito",
+      review: savedReview,
+    });
+  } catch (error) {
+    console.error("Error al crear reseña:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al crear la reseña",
       error: error.message,
     });
   }
 };
 
-// Función para obtener reseñas por libro
-const getReviewsByBook = async (req, res) => {
-  const { bookId } = req.params;
-
+exports.getBookReviews = async (req, res) => {
   try {
-    console.log("Buscando reseñas para el libro con ID:", bookId);
+    const { bookId } = req.params;
 
-    let book;
-    // Si es un ObjectId válido, buscamos por _id
-    if (isValidObjectId(bookId)) {
-      book = await Book.findById(bookId);
-    } else {
-      // Si no es un ObjectId válido, buscamos por simpleId
-      book = await Book.findOne({ simpleId: String(bookId) });
+    // Validamos que se proporcione un ID de libro válido
+    if (!bookId) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de libro no proporcionado",
+      });
     }
 
-    if (!book) {
-      return res.status(404).json({ message: "Libro no encontrado" });
-    }
+    // Buscamos todas las reseñas de este libro
+    const reviews = await Review.find({ bookId }).sort({ createdAt: -1 });
 
-    // Buscamos las reseñas del libro
-    const reviews = await Review.find({ book: book._id })
-      .sort({ createdAt: -1 }) // Ordenar por más recientes primero
-      .populate("user", "username"); // Opcional: poblar datos del usuario
-
-    console.log(
-      `Encontradas ${reviews.length} reseñas para el libro ${book.title}`
-    );
-
-    return res.status(200).json({ reviews });
+    res.status(200).json(reviews);
   } catch (error) {
     console.error("Error al obtener reseñas:", error);
-    return res.status(500).json({
-      message: "Error del servidor",
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener reseñas",
       error: error.message,
     });
   }
 };
 
-module.exports = {
-  createReview,
-  getReviewsByBook,
+exports.deleteReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const userId = req.user.id;
+
+    // Buscamos la reseña
+    const review = await Review.findById(reviewId);
+
+    if (!review) {
+      return res.status(404).json({
+        success: false,
+        message: "Reseña no encontrada",
+      });
+    }
+
+    // Verificamos que el usuario sea el autor de la reseña o un administrador
+    if (review.userId.toString() !== userId && req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permiso para eliminar esta reseña",
+      });
+    }
+
+    // Eliminamos la reseña
+    await Review.findByIdAndDelete(reviewId);
+
+    res.status(200).json({
+      success: true,
+      message: "Reseña eliminada con éxito",
+    });
+  } catch (error) {
+    console.error("Error al eliminar reseña:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al eliminar la reseña",
+      error: error.message,
+    });
+  }
+};
+
+// Opcional: Actualizar una reseña existente
+exports.updateReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const userId = req.user.id;
+    const { rating, comment } = req.body;
+
+    // Validación de datos
+    if (!rating && !comment) {
+      return res.status(400).json({
+        success: false,
+        message: "No hay datos para actualizar",
+      });
+    }
+
+    // Buscamos la reseña
+    const review = await Review.findById(reviewId);
+
+    if (!review) {
+      return res.status(404).json({
+        success: false,
+        message: "Reseña no encontrada",
+      });
+    }
+
+    // Verificamos que el usuario sea el autor de la reseña
+    if (review.userId.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permiso para actualizar esta reseña",
+      });
+    }
+
+    // Actualizamos la reseña
+    if (rating) review.rating = rating;
+    if (comment) review.comment = comment;
+    review.updatedAt = Date.now();
+
+    // Guardamos los cambios
+    const updatedReview = await review.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Reseña actualizada con éxito",
+      review: updatedReview,
+    });
+  } catch (error) {
+    console.error("Error al actualizar reseña:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al actualizar la reseña",
+      error: error.message,
+    });
+  }
 };

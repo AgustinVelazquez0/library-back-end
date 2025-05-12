@@ -1,44 +1,42 @@
+// models/reviewModel.js
 const mongoose = require("mongoose");
 
-const reviewSchema = new mongoose.Schema(
-  {
-    book: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Book",
-      required: true,
-    },
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: false, // Cambiado a false para permitir reseñas anónimas inicialmente
-    },
-    rating: {
-      type: Number,
-      required: true,
-      min: 1, // Puntuación mínima de 1
-      max: 5, // Puntuación máxima de 5
-    },
-    comment: {
-      type: String,
-      required: true,
-    },
-    username: {
-      type: String,
-      default: "Anónimo", // Valor por defecto para reseñas anónimas
-    },
-    // Campo adicional para permitir múltiples reseñas del mismo usuario
-    timestamp: {
-      type: Date,
-      default: Date.now,
-    },
+const reviewSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
   },
-  { timestamps: true }
-);
+  bookId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Book",
+    required: true,
+  },
+  username: {
+    type: String,
+    required: true,
+  },
+  rating: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 5,
+  },
+  comment: {
+    type: String,
+    required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
-// Si existe un índice compuesto que podría estar causando problemas, lo eliminamos explícitamente
-// Nota: Solo es necesario ejecutar esto una vez en producción
-reviewSchema.index({ book: 1, user: 1 }, { unique: false });
+// Índice compuesto para evitar reseñas duplicadas del mismo usuario para el mismo libro
+reviewSchema.index({ userId: 1, bookId: 1 }, { unique: true });
 
-const Review = mongoose.model("Review", reviewSchema);
-
-module.exports = Review;
+module.exports = mongoose.model("Review", reviewSchema);
