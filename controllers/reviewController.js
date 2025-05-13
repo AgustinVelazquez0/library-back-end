@@ -1,70 +1,50 @@
 // controllers/reviewController.js
 const Review = require("../models/reviewModel");
-const User = require("../models/userModel");
 const Book = require("../models/bookModel");
+const jwt = require("jsonwebtoken");
 
 // Crear una nueva reseña
 exports.createReview = async (req, res) => {
   try {
-    console.log("Datos de la reseña recibidos:", req.body);
-    const { bookId, rating, comment, userId, username } = req.body;
+    // Obtenemos el token desde los encabezados de la solicitud
+    const token = req.headers.authorization.split(" ")[1]; // Obtenemos el token después de "Bearer"
 
-    console.log(
-      `Recibida solicitud para crear reseña para el libro ID: ${bookId}`
-    );
+    // Decodificamos el token para obtener el userId y reviewerName
+    const decodedToken = jwt.decode(token);
+    const userId = decodedToken.id; // ID del usuario
+    const reviewerName = decodedToken.name; // Nombre del usuario
 
-    // Necesitamos encontrar el libro usando numericId en lugar de _id
-    let book;
+    // Datos de la reseña recibidos desde el frontend
+    const { bookId, rating, comment } = req.body;
 
-    // Si el bookId es un número o parece serlo (string numérico)
-    if (!isNaN(bookId)) {
-      console.log(`Buscando libro con numericId: ${bookId}`);
-      book = await Book.findOne({ numericId: parseInt(bookId) });
-    } else {
-      // Si es un ObjectId
-      console.log(`Buscando libro con _id: ${bookId}`);
-      book = await Book.findById(bookId);
-    }
-
+    // Buscamos el libro con el ID recibido
+    const book = await Book.findById(bookId);
     if (!book) {
-      console.log(`No se encontró el libro con ID: ${bookId}`);
       return res.status(404).json({
         success: false,
-        message: `No se encontró el libro con ID: ${bookId}`,
+        message: "Libro no encontrado",
       });
     }
 
-    console.log(`Libro encontrado: ${book.title} (ID: ${book._id})`);
-
-    // Crear la reseña usando el _id del libro (ObjectId) que encontramos
+    // Creamos la reseña
     const newReview = new Review({
-      userId,
-      bookId: book._id, // Usar el ObjectId del libro
-      reviewerName: username,
+      bookId: book._id,
       rating,
       comment,
+      userId,
+      reviewerName,
     });
 
-    const savedReview = await newReview.save();
-    console.log(`Reseña guardada con ID: ${savedReview._id}`);
+    // Guardamos la reseña en la base de datos
+    await newReview.save();
 
     res.status(201).json({
       success: true,
-      message: "Reseña creada exitosamente",
-      data: savedReview,
+      message: "Reseña creada con éxito",
+      review: newReview,
     });
   } catch (error) {
-    console.error("Error en createReview:", error);
-
-    // Manejo especial para errores de validación de duplicados
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: "Ya has escrito una reseña para este libro",
-        error: "Duplicate review",
-      });
-    }
-
+    console.error("Error al crear la reseña:", error);
     res.status(500).json({
       success: false,
       message: "Error al crear la reseña",
