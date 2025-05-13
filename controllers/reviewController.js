@@ -39,7 +39,7 @@ exports.createReview = async (req, res) => {
     const newReview = new Review({
       userId,
       bookId: book._id, // Usar el ObjectId del libro
-      reviewerName: User.name,
+      reviewerName: username,
       rating,
       comment,
     });
