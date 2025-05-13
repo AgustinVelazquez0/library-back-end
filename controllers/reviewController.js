@@ -6,6 +6,7 @@ const Book = require("../models/bookModel");
 // Crear una nueva reseña
 exports.createReview = async (req, res) => {
   try {
+    console.log("Datos de la reseña recibidos:", req.body);
     const { bookId, rating, comment, userId, username } = req.body;
 
     console.log(
