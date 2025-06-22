@@ -3,21 +3,20 @@
 const express = require("express");
 const router = express.Router();
 const bookController = require("../controllers/bookController");
-const verifyToken = require("../middleware/verifyToken"); // Middleware de autenticación
+const verifyToken = require("../middleware/verifyToken");
 
-// Rutas CRUD protegidas con JWT
-router.post("/", verifyToken, bookController.createBook); // Crear un libro
-router.get("/", verifyToken, bookController.getAllBooks); // Obtener todos los libros
-router.get("/:id", verifyToken, bookController.getBookById); // Obtener un libro por ID
-router.put("/:id", verifyToken, bookController.updateBook); // Actualizar un libro
-router.delete("/:id", verifyToken, bookController.deleteBook); // Eliminar un libro
+// 🔍 NUEVAS RUTAS DE BÚSQUEDA (SIN autenticación para mejor UX)
+router.get("/search", bookController.searchBooks);
+router.get("/category/:category", bookController.getBooksByCategory);
+router.get("/stats", bookController.getSearchStats);
+router.post("/cache/clear", verifyToken, bookController.clearSearchCache);
 
-// Nueva ruta para cargar libros desde JSON
-// Con autenticación
-
-// router.post("/load", verifyToken, bookController.loadBooksFromJson);
-
-// O sin autenticación (solo comentar la línea de arriba y descomentar esta)
+// Rutas CRUD existentes (GET sin autenticación para mejor UX del frontend)
+router.post("/", verifyToken, bookController.createBook);
+router.get("/", bookController.getAllBooks);
+router.get("/:id", bookController.getBookById);
+router.put("/:id", verifyToken, bookController.updateBook);
+router.delete("/:id", verifyToken, bookController.deleteBook);
 router.post("/load", bookController.loadBooksFromJson);
 
 module.exports = router;
