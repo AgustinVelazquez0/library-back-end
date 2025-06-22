@@ -6,11 +6,31 @@ const Book = require("../models/bookModel");
 // Crear una nueva reseña
 exports.createReview = async (req, res) => {
   try {
-    const { bookId, rating, comment, userId, username } = req.body;
+    const { bookId, rating, comment } = req.body;
+
+    // Obtener userId del token (req.user viene del middleware verifyToken)
+    const userId = req.user.id;
 
     console.log(
-      `Recibida solicitud para crear reseña para el libro ID: ${bookId}`
+      `Recibida solicitud para crear reseña para el libro ID: ${bookId} por usuario: ${userId}`
     );
+
+    // Validar datos requeridos
+    if (!bookId || !rating || !comment) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Faltan datos requeridos: bookId, rating y comment son obligatorios",
+      });
+    }
+
+    // Validar rating
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: "El rating debe estar entre 1 y 5",
+      });
+    }
 
     // Necesitamos encontrar el libro usando numericId en lugar de _id
     let book;
@@ -38,13 +58,24 @@ exports.createReview = async (req, res) => {
     // Buscar el usuario para obtener su nombre
     const user = await User.findById(userId);
 
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Usuario no encontrado. Por favor, inicia sesión nuevamente.",
+      });
+    }
+
+    console.log(
+      `Usuario encontrado: ${user.name || user.username || "Sin nombre"}`
+    );
+
     // Crear la reseña usando el _id del libro (ObjectId) que encontramos
     const newReview = new Review({
       userId,
       bookId: book._id, // Usar el ObjectId del libro
-      reviewerName: user.name,
-      rating,
-      comment,
+      reviewerName: user.name || user.username || "Usuario Anónimo", // Fallback seguro
+      rating: parseInt(rating),
+      comment: comment.trim(),
     });
 
     const savedReview = await newReview.save();

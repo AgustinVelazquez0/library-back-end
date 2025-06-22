@@ -98,10 +98,27 @@ app.use(limiter);
 app.use("/api/users/login", authLimiter);
 app.use("/api/users/register", authLimiter);
 
-// CORS avanzado
+// CORS avanzado - Detectar automáticamente nginx
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: function (origin, callback) {
+      // Lista de origins permitidos
+      const allowedOrigins = [
+        process.env.CLIENT_URL, // Vite directo
+        "http://localhost:80", // Nginx
+        "http://localhost", // Nginx sin puerto
+        "http://localhost:5173", // Vite directo
+      ];
+
+      // Permitir requests sin origin (Postman, apps móviles, etc.)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("No permitido por CORS"));
+      }
+    },
     credentials: true,
     optionsSuccessStatus: 200,
   })

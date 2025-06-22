@@ -28,17 +28,24 @@ exports.createBook = async (req, res) => {
 // Obtener todos los libros (CORREGIDA)
 exports.getAllBooks = async (req, res) => {
   try {
-    // Si hay parámetro de búsqueda, usar búsqueda inteligente
     const { search, q, category, minRating, language, limit } = req.query;
     const searchQuery = search || q;
 
     if (searchQuery || category) {
-      // Usar búsqueda inteligente
       return exports.searchBooks(req, res);
     }
 
-    // Si no hay búsqueda, devolver todos los libros
-    const books = await Book.find().lean();
+    // 🚀 OPTIMIZACIÓN: Proyección para campos específicos
+    const books = await Book.find()
+      .select(
+        "title author description category coverImage rating language pages publicationYear numericId driveLink"
+      )
+      .lean() // Más rápido que documentos Mongoose completos
+      .limit(parseInt(limit) || 100) // Limitar resultados
+      .sort({ numericId: 1 }); // Ordenar por ID
+
+    // 🔥 Cache control
+    res.set("X-Total-Count", books.length);
 
     // 🔥 INICIALIZAR BÚSQUEDA SI NO ESTÁ INICIALIZADA
     if (!searchService.fuse) {
@@ -47,6 +54,7 @@ exports.getAllBooks = async (req, res) => {
 
     res.status(200).json(books);
   } catch (err) {
+    console.error("Error en getAllBooks:", err);
     res.status(500).json({ error: err.message });
   }
 };

@@ -56,6 +56,14 @@ const bookSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Agregar índices para consultas rápidas
+bookSchema.index({ title: "text", author: "text", description: "text" });
+bookSchema.index({ category: 1 });
+bookSchema.index({ rating: -1 });
+bookSchema.index({ language: 1 });
+bookSchema.index({ numericId: 1 });
+bookSchema.index({ createdAt: -1 });
+
 const Book = mongoose.model("Book", bookSchema);
 
 module.exports = Book;
