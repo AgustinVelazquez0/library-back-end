@@ -4,6 +4,9 @@ const router = express.Router();
 const reviewController = require("../controllers/reviewController");
 const verifyToken = require("../middleware/verifyToken");
 
+// Ruta para obtener todas las reseñas - no requiere autenticación
+router.get("/", reviewController.getAllReviews);
+
 // Ruta para obtener todas las reseñas de un libro - no requiere autenticación
 router.get("/book/:bookId", reviewController.getBookReviews);
 

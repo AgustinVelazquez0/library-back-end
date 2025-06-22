@@ -1,50 +1,103 @@
 // controllers/reviewController.js
 const Review = require("../models/reviewModel");
+const User = require("../models/userModel");
 const Book = require("../models/bookModel");
-const jwt = require("jsonwebtoken");
 
 // Crear una nueva reseña
 exports.createReview = async (req, res) => {
   try {
-    // Obtenemos el token desde los encabezados de la solicitud
-    const token = req.headers.authorization.split(" ")[1]; // Obtenemos el token después de "Bearer"
-
-    // Decodificamos el token para obtener el userId y reviewerName
-    const decodedToken = jwt.decode(token);
-    const userId = decodedToken.id; // ID del usuario
-    const reviewerName = decodedToken.name; // Nombre del usuario
-
-    // Datos de la reseña recibidos desde el frontend
     const { bookId, rating, comment } = req.body;
 
-    // Buscamos el libro con el ID recibido
-    const book = await Book.findById(bookId);
-    if (!book) {
-      return res.status(404).json({
+    // Obtener userId del token (req.user viene del middleware verifyToken)
+    const userId = req.user.id;
+
+    console.log(
+      `Recibida solicitud para crear reseña para el libro ID: ${bookId} por usuario: ${userId}`
+    );
+
+    // Validar datos requeridos
+    if (!bookId || !rating || !comment) {
+      return res.status(400).json({
         success: false,
-        message: "Libro no encontrado",
+        message:
+          "Faltan datos requeridos: bookId, rating y comment son obligatorios",
       });
     }
 
-    // Creamos la reseña
+    // Validar rating
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: "El rating debe estar entre 1 y 5",
+      });
+    }
+
+    // Necesitamos encontrar el libro usando numericId en lugar de _id
+    let book;
+
+    // Si el bookId es un número o parece serlo (string numérico)
+    if (!isNaN(bookId)) {
+      console.log(`Buscando libro con numericId: ${bookId}`);
+      book = await Book.findOne({ numericId: parseInt(bookId) });
+    } else {
+      // Si es un ObjectId
+      console.log(`Buscando libro con _id: ${bookId}`);
+      book = await Book.findById(bookId);
+    }
+
+    if (!book) {
+      console.log(`No se encontró el libro con ID: ${bookId}`);
+      return res.status(404).json({
+        success: false,
+        message: `No se encontró el libro con ID: ${bookId}`,
+      });
+    }
+
+    console.log(`Libro encontrado: ${book.title} (ID: ${book._id})`);
+
+    // Buscar el usuario para obtener su nombre
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Usuario no encontrado. Por favor, inicia sesión nuevamente.",
+      });
+    }
+
+    console.log(
+      `Usuario encontrado: ${user.name || user.username || "Sin nombre"}`
+    );
+
+    // Crear la reseña usando el _id del libro (ObjectId) que encontramos
     const newReview = new Review({
-      bookId: book._id,
-      rating,
-      comment,
       userId,
-      reviewerName,
+      bookId: book._id, // Usar el ObjectId del libro
+      reviewerName: user.name || user.username || "Usuario Anónimo", // Fallback seguro
+      rating: parseInt(rating),
+      comment: comment.trim(),
     });
 
-    // Guardamos la reseña en la base de datos
-    await newReview.save();
+    const savedReview = await newReview.save();
+    console.log(`Reseña guardada con ID: ${savedReview._id}`);
 
     res.status(201).json({
       success: true,
-      message: "Reseña creada con éxito",
-      review: newReview,
+      message: "Reseña creada exitosamente",
+      data: savedReview,
     });
   } catch (error) {
-    console.error("Error al crear la reseña:", error);
+    console.error("Error en createReview:", error);
+
+    // Manejo especial para errores de validación de duplicados
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Ya has escrito una reseña para este libro",
+        error: "Duplicate review",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Error al crear la reseña",
