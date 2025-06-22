@@ -2,7 +2,7 @@
 
 const express = require("express");
 const { loginUser, registerUser } = require("../controllers/userController");
-const authenticateToken = require("../middleware/verifyToken");
+const verifyToken = require("../middleware/verifyToken");
 
 const router = express.Router();
 
@@ -127,7 +127,7 @@ router.post("/login", loginUser);
  *       401:
  *         description: Token inválido o expirado
  */
-router.get("/me", authenticateToken, (req, res) => {
+router.get("/me", verifyToken, (req, res) => {
   res.json({
     id: req.user.id,
     email: req.user.email,
