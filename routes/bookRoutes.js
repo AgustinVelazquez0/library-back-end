@@ -19,4 +19,7 @@ router.put("/:id", verifyToken, bookController.updateBook);
 router.delete("/:id", verifyToken, bookController.deleteBook);
 router.post("/load", bookController.loadBooksFromJson);
 
+// 🔄 RUTA TEMPORAL DE MIGRACIÓN (requiere autenticación)
+router.post("/migrate", verifyToken, bookController.migrateAllBooks);
+
 module.exports = router;
