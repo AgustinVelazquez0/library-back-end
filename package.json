@@ -36,5 +36,9 @@
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.17.0"
   },
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "nodemon": "^3.1.10",
+    "pm2": "^6.0.8"
+  }
 }
